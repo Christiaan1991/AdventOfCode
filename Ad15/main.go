@@ -14,107 +14,124 @@ var program = readFile()
 var comp = intcomp.Computer{program, false, 0, 0}
 var found bool = false
 var steps int = 0
-var commands []int
+
+const size int = 50
+
+var maps [size][size]int
+var xpos = size / 2
+var ypos = size / 2
 
 //1 is north, 2 is south, 3 is west, 4 is east
 
 func main() {
-	//remoteControlProgram()
-	//fmt.Println(steps)
-	fmt.Println(comp.Compute(1))
-	fmt.Println(comp.Compute(1))
-	fmt.Println(comp.Compute(1))
-	fmt.Println(comp.Compute(1))
-	fmt.Println(comp.Compute(3))
-	fmt.Println(comp.Compute(3))
-	fmt.Println(comp.Compute(3))
-	fmt.Println(comp.Compute(3))
-	fmt.Println(comp.Compute(3))
-	fmt.Println(comp.Compute(3))
-	fmt.Println(comp.Compute(1))
-	fmt.Println(comp.Compute(1))
-	fmt.Println(comp.Compute(1))
-	fmt.Println(comp.Compute(1))
-	fmt.Println(comp.Compute(3))
-	fmt.Println(comp.Compute(3))
-	fmt.Println(comp.Compute(3))
-	fmt.Println(comp.Compute(3))
-	fmt.Println(comp.Compute(2))
-	fmt.Println(comp.Compute(2))
-	fmt.Println(comp.Compute(2))
-	fmt.Println(comp.Compute(2))
-	fmt.Println(comp.Compute(4))
-	fmt.Println(comp.Compute(4))
-	fmt.Println(comp.Compute(1))
-	fmt.Println(comp.Compute(1))
-	fmt.Println(comp.Compute(2))
-	fmt.Println(comp.Compute(1))
-	fmt.Println(comp.Compute(1))
+	var previous_command int = 0
+	maps[xpos][ypos] = 4
+	remoteControlProgram(previous_command)
+	showMap()
 }
 
-func remoteControlProgram() {
+func remoteControlProgram(previous_move int) {
 
-	fmt.Println(commands)
-	if found {
+	// if steps%size/2 == 0 {
+	// 	showMap()
+	// }
+
+	if fullMaze() {
 		return
 	}
 
-	for i := 1; i <= 4; i++ {
+	for move := 1; move <= 4; move++ {
 
-		if len(commands) != 0 && !checkPreviousMove(i) { //if move was performed, certain moves cannot be performed to avoid looping
+		// if found {
+		// 	return
+		// }
+
+		if oppositeDirection(move) == previous_move { //if move is opposite direction from the previous move, move cannot be performed to avoid looping
 			continue
 		}
 
-		output := comp.Compute(i)
-		//fmt.Println(output)
+		updatePosition(move)
+		output := comp.Compute(move)
+		maps[xpos][ypos] = output + 1
+
+		//fmt.Println(xpos, ypos, previous_move, move, output)
 
 		if output == 0 { //crash to wall, check further position
+			updatePosition(oppositeDirection(move))
 			continue
-		} else if output == 1 { //possible path
+		} else if output == 1 { //possible path! we add +1 to the total number of steps and go find next path
 			steps++
-			commands = append(commands, i)
-			remoteControlProgram()
+			remoteControlProgram(move)
 
 		} else if output == 2 {
-			found = true
+			fmt.Println("found endpoint")
 			return
 		}
 	}
 
-	//when it comes here, all possibilties are checked and no move is allowed. we go back one step, remove step from commands, and steps--
-	stepBack()
-	remove(commands, steps-1)
+	//when it comes here, all possibilties are checked and no move is allowed except for the opposite direction. we perform move back, calculate  in the intcomp, set move to previous move and steps--
+	move := oppositeDirection(previous_move)
+	updatePosition(move)
+	comp.Compute(move)
 	steps--
 
 }
 
-func checkPreviousMove(move int) bool { //to check that we are not moving back intentionally
-	if commands[steps-1] == 1 && move == 2 {
-		return false
-	} else if commands[steps-1] == 2 && move == 1 {
-		return false
-	} else if commands[steps-1] == 3 && move == 4 {
-		return false
-	} else if commands[steps-1] == 4 && move == 3 {
-		return false
+func fullMaze() bool {
+	for i := 0; i < size; i++ {
+		for j := 0; j < size; j++ {
+			if maps[i][j] == 0 {
+				return false
+			}
+		}
 	}
+
 	return true
 }
 
-func stepBack() {
-	if commands[len(commands)-1] == 1 {
-		comp.Compute(2)
-	} else if commands[len(commands)-1] == 2 {
-		comp.Compute(1)
-	} else if commands[len(commands)-1] == 3 {
-		comp.Compute(4)
-	} else if commands[len(commands)-1] == 4 {
-		comp.Compute(3)
+func updatePosition(move int) {
+	if move == 1 { //north
+		ypos--
+	} else if move == 2 { //south
+		ypos++
+	} else if move == 3 { //west
+		xpos--
+	} else { //east
+		xpos++
 	}
 }
 
-func remove(slice []int, s int) []int {
-	return slice[:len(slice)-1]
+func oppositeDirection(i int) int {
+	if i == 1 {
+		return 2
+	} else if i == 2 {
+		return 1
+	} else if i == 3 {
+		return 4
+	} else {
+		return 3
+	}
+}
+
+func showMap() {
+	for i := 0; i < len(maps); i++ {
+		for j := 0; j < len(maps[i]); j++ {
+			if maps[j][i] == 0 {
+				fmt.Printf(" ")
+			} else if maps[j][i] == 1 {
+				fmt.Printf("#")
+			} else if maps[j][i] == 2 {
+				fmt.Printf("-")
+			} else if maps[j][i] == 3 { //end point
+				fmt.Printf("X")
+			} else if maps[j][i] == 4 { //starting point
+				fmt.Printf("0")
+			}
+
+		}
+		fmt.Printf("\n")
+	}
+	fmt.Printf("\n")
 }
 
 func readFile() []int {
