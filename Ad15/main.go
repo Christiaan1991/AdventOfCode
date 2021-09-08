@@ -12,59 +12,105 @@ import (
 
 var program = readFile()
 var comp = intcomp.Computer{program, false, 0, 0}
-var found bool = false
+var full_maze bool = false
 var steps int = 0
 
 const size int = 50
 
 var maps [size][size]int
-var xpos = size / 2
-var ypos = size / 2
+var xstart = size / 2
+var ystart = size / 2
+var xpos = xstart
+var ypos = ystart
+var xend int
+var yend int
+
+var rowNum = [4]int{-1, 0, 0, 1}
+var colNum = [4]int{0, -1, 1, 0}
 
 //1 is north, 2 is south, 3 is west, 4 is east
 
 func main() {
 	var previous_command int = 0
-	maps[xpos][ypos] = 4
+	maps[xpos][ypos] = 3
 	remoteControlProgram(previous_command)
+	maps[xstart][ystart] = 2
+	maps[xend][yend] = 3
 	showMap()
+	maps[xstart][ystart] = 1
+	maps[xend][yend] = 1
+	dist := findShortestPath()
+	fmt.Println(dist)
+}
+
+func findShortestPath() int {
+	var oxygen = 0
+	var visited [size][size]bool
+	var q []queueNode
+	var currNode queueNode
+	var pt Point
+	startpoint := Point{xend, yend}
+	//des := Point{xend, yend}
+
+	visited[xstart][ystart] = true
+	s := queueNode{startpoint, 0}
+	q = append(q, s)
+
+	for len(q) != 0 {
+		fmt.Println(q)
+		currNode, q = q[0], q[1:]
+		pt = currNode.pt
+		// if pt.x == des.x && pt.y == des.y {
+		// 	return currNode.dist
+		// }
+
+		for i := 0; i < 4; i++ {
+			var row = pt.x + rowNum[i]
+			var col = pt.y + colNum[i]
+
+			if isValid(row, col) && maps[row][col] == 1 && !visited[row][col] {
+				visited[row][col] = true
+				q = append(q, queueNode{Point{row, col}, currNode.dist + 1})
+
+			}
+		}
+		oxygen++
+	}
+
+	//Destination cannot be reached
+	return oxygen
+}
+
+func isValid(row int, col int) bool {
+	return (row >= 0) && (row < size) && (col >= 0) && (col < size)
 }
 
 func remoteControlProgram(previous_move int) {
 
-	// if steps%size/2 == 0 {
-	// 	showMap()
-	// }
-
-	if fullMaze() {
-		return
-	}
-
 	for move := 1; move <= 4; move++ {
 
-		// if found {
-		// 	return
-		// }
+		if steps == 1100 {
+			return
+		}
 
 		if oppositeDirection(move) == previous_move { //if move is opposite direction from the previous move, move cannot be performed to avoid looping
 			continue
 		}
 
 		updatePosition(move)
-		output := comp.Compute(move)
-		maps[xpos][ypos] = output + 1
 
-		//fmt.Println(xpos, ypos, previous_move, move, output)
+		output := comp.Compute(move)
+		maps[xpos][ypos] = output
 
 		if output == 0 { //crash to wall, check further position
 			updatePosition(oppositeDirection(move))
 			continue
-		} else if output == 1 { //possible path! we add +1 to the total number of steps and go find next path
+		} else if output == 1 { //possible path! go find next path
 			steps++
 			remoteControlProgram(move)
-
-		} else if output == 2 {
-			fmt.Println("found endpoint")
+		} else if output == 2 { //oxygen station found
+			xend = xpos
+			yend = ypos
 			return
 		}
 	}
@@ -73,20 +119,6 @@ func remoteControlProgram(previous_move int) {
 	move := oppositeDirection(previous_move)
 	updatePosition(move)
 	comp.Compute(move)
-	steps--
-
-}
-
-func fullMaze() bool {
-	for i := 0; i < size; i++ {
-		for j := 0; j < size; j++ {
-			if maps[i][j] == 0 {
-				return false
-			}
-		}
-	}
-
-	return true
 }
 
 func updatePosition(move int) {
@@ -117,14 +149,12 @@ func showMap() {
 	for i := 0; i < len(maps); i++ {
 		for j := 0; j < len(maps[i]); j++ {
 			if maps[j][i] == 0 {
-				fmt.Printf(" ")
-			} else if maps[j][i] == 1 {
 				fmt.Printf("#")
-			} else if maps[j][i] == 2 {
+			} else if maps[j][i] == 1 {
 				fmt.Printf("-")
-			} else if maps[j][i] == 3 { //end point
+			} else if maps[j][i] == 2 { //end point
 				fmt.Printf("X")
-			} else if maps[j][i] == 4 { //starting point
+			} else if maps[j][i] == 3 { //starting point
 				fmt.Printf("0")
 			}
 
@@ -165,4 +195,16 @@ func readFile() []int {
 	}
 
 	return nums
+}
+
+//-------------------------------------------------------------------------------------------------------------------------------------------
+
+type Point struct {
+	x int
+	y int
+}
+
+type queueNode struct {
+	pt   Point
+	dist int
 }
