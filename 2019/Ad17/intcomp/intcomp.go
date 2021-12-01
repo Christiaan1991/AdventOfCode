@@ -25,6 +25,10 @@ func generateInstruction(instr string) string {
 	return instr
 }
 
+func (comp *Computer) SetProgram(index int, num int) {
+	comp.Program[index] = num
+}
+
 func (comp *Computer) setParam(result int, mode string, pos int) {
 	if mode == "0" {
 		comp.Program[comp.Program[comp.Counter+pos]] = result
