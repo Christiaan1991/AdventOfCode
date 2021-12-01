@@ -16,10 +16,6 @@ func main() {
 }
 
 func part2(input []int) {
-
-}
-
-func part1(input []int) {
 	counter := 0
 	var newinput []int
 	i := 0
@@ -31,6 +27,17 @@ func part1(input []int) {
 
 	for i := 1; i < len(newinput); i++ {
 		if newinput[i] > newinput[i-1] {
+			counter++
+		}
+	}
+	fmt.Println(counter)
+}
+
+func part1(input []int) {
+	counter := 0
+
+	for i := 1; i < len(input); i++ {
+		if input[i] > input[i-1] {
 			counter++
 		}
 	}
