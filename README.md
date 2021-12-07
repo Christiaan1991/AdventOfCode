@@ -4,4 +4,4 @@ Coding is performed using golang
 
 ## Run
 * change directory to the day you want to run the code
-* `go run main.go`
+* `go run "namefile".go`
